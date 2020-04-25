@@ -11,14 +11,14 @@
         </thead>
         {% for survey in surveys %}
             <tr>
-                <td><a href="/engagement/{{ survey.engagement.id }}/questionnaire/{{ survey.id }}">{{ survey.survey.name }}</a>
+                <td><a href="/engagement/{{ survey.engagement.id }}/survey/{{ survey.id }}">{{ survey.survey.name }}</a>
                 </td>
                 <td>{{ survey.responder }}</td>
                 <td>
                     {% if survey.completed %}
-                        <span class="pass_fail Pass">Responded</span>
+                        <span class="pass_fail Pass">Completed</span>
                     {% else %}
-                        <span class="pass_fail">Waiting</span>
+                        <span class="pass_fail">Unanswered</span>
                     {% endif %}
                 </td>
                 <td>{{ survey.answered_on }}</td>
@@ -36,12 +36,12 @@
                         {% endif %}
                         <button type="button" class="btn btn-sm btn-primary" data-toggle="modal"
                                 data-target="#shareSurveyModal"
-                                data-whatever="/engagement/{{ survey.engagement.id }}/questionnaire/{{ survey.id }}/answer">
-                            <i class="fa fa-share-alt"></i> Share Questionnaire
+                                data-whatever="/engagement/{{ survey.engagement.id }}/survey/{{ survey.id }}/answer">
+                            <i class="fa fa-share-alt"></i> Share Survey
                         </button>
                         <a class="btn btn-sm btn-danger"
-                           href="/engagement/{{ survey.engagement.id }}/questionnaire/{{ survey.id }}/delete"> Delete
-                            Questionnaire </a>
+                           href="/engagement/{{ survey.engagement.id }}/survey/{{ survey.id }}/delete"> Delete
+                            Survey </a>
                     </div>
                 </td>
             </tr>
@@ -49,6 +49,6 @@
     </table>
 {% else %}
     <div class="panel-body">
-        <p>No questionnaires found.</p>
+        <p>No surveys found.</p>
     </div>
 {% endif %}

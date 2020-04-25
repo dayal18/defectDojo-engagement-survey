@@ -2,7 +2,7 @@
 {% block content %}
     <h3> Delete {{ survey }} Survey</h3>
     <p>
-        Deleting this Questionnaire will remove any answers associated with it. These relationships are listed below:
+        Deleting this Survey will remove any answers associated with it. These relationships are listed below:
     </p>
     <div class="danger-zone panel panel-danger">
         <div class="panel-heading">
@@ -15,7 +15,7 @@
                 {% endfor %}
             </form>
         {% else %}
-            <p>No responses found.</p>
+            <p>No answers found.</p>
         {% endif %}
         {% if rels|length > 1 %}
             <ul class="left">{{ rels|unordered_list }}</ul>
