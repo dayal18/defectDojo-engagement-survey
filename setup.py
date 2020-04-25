@@ -12,7 +12,7 @@ setup(
     version="1.0.1",
     description="DefectDojo Engagement Survey",
     long_description=read('README.md'),
-    url="https://github.com/dayal18/defectDojo-engagement-survey.git",
+    url="https://github.com/dayal18/defectDojo-engagement-survey",
     author="Manav Nagla",
     author_email="dayal18@gmail.com",
     packages=find_packages(),
