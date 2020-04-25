@@ -27,7 +27,7 @@
                 </div>
                 {% include "dojo/paging_snippet.html" with page=surveys %}
             {% else %}
-                No surveys found.
+                No questionnaires found.
             {% endif %}
         </div>
         <div class="col-md-2">
@@ -37,7 +37,7 @@
                         <div class="panel-heading">Actions</div>
                         <div class="panel-body centered">
                             <a class="btn btn-sm btn-primary" href="{% url 'create_survey' %}">
-                                Create Survey
+                                Create Questionnaire
                             </a>
                         </div>
                     {% endif %}
