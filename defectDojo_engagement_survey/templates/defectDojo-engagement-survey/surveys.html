@@ -37,11 +37,11 @@
                         <button type="button" class="btn btn-sm btn-primary" data-toggle="modal"
                                 data-target="#shareSurveyModal"
                                 data-whatever="/engagement/{{ survey.engagement.id }}/survey/{{ survey.id }}/answer">
-                            <i class="fa fa-share-alt"></i> Share Survey
+                            <i class="fa fa-share-alt"></i> Share Questionnaire
                         </button>
                         <a class="btn btn-sm btn-danger"
                            href="/engagement/{{ survey.engagement.id }}/survey/{{ survey.id }}/delete"> Delete
-                            Survey </a>
+                            Questionnaire </a>
                     </div>
                 </td>
             </tr>
@@ -49,6 +49,6 @@
     </table>
 {% else %}
     <div class="panel-body">
-        <p>No surveys found.</p>
+        <p>No Questionnaires found.</p>
     </div>
 {% endif %}
