@@ -10,11 +10,11 @@ def read(fname):
 setup(
     name="defectDojo_engagement_survey",
     version="1.0.1",
-    description="DefectDojo Security Questionnaire",
+    description="DefectDojo Engagement Survey",
     long_description=read('README.md'),
-    url="https://github.com/dayal18/defectDojo-engagement-survey.git",
+    url="https://github.com/grendel513/defectDojo-engagement-survey",
     author="Jay Paz",
-    author_email="dayal18@gmail.com",
+    author_email="jay.paz@gmail.com",
     packages=find_packages(),
     include_package_data=True,
     classifiers=[
