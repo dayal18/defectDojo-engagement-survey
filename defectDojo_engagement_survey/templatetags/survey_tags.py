@@ -6,12 +6,11 @@ Created on Feb 18, 2015
 from django import template
 from ..models import Answered_Survey, Engagement_Survey
 
-
 register = template.Library()
 
 
 @register.inclusion_tag('defectDojo-engagement-survey/surveys.html')
-def show_surveys(engagement):
+def show_surveys(engagement, users):
     surveys = Answered_Survey.objects.filter(engagement=engagement)
     return {'surveys': surveys}
 

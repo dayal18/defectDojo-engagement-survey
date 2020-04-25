@@ -3,6 +3,7 @@
         <thead>
         <tr>
             <th>Name</th>
+            <th>Assignee</th>
             <th>Responder</th>
             <th>Status</th>
             <th>Completion Date</th>
@@ -11,9 +12,21 @@
         </thead>
         {% for survey in surveys %}
             <tr>
-                <td><a href="/engagement/{{ survey.engagement.id }}/survey/{{ survey.id }}">{{ survey.survey.name }}</a>
+                <td><a href="/engagement/{{ survey.engagement.id }}/survey/{{ survey.id }}">{{ survey.survey.name }}</a></td>  
+                <td>
+                    {% if survey.assignee == None %}
+                        Not Assigned
+                    {% else %}
+                        {{ survey.assignee.username }} 
+                    {% endif %}
                 </td>
-                <td>{{ survey.responder }}</td>
+                <td>
+                    {% if survey.responder %}
+                        {{ survey.responder }}
+                    {% else %}
+                        Anonymous
+                    {% endif %}
+                </td>
                 <td>
                     {% if survey.completed %}
                         <span class="pass_fail Pass">Completed</span>
@@ -34,6 +47,8 @@
                                href="/engagement/{{ survey.engagement.id }}/survey/{{ survey.id }}/answer"> Edit
                                 Responses </a>
                         {% endif %}
+                        <a class="btn btn-sm btn-info"
+                           href="/engagement/{{ survey.engagement.id }}/survey/{{ survey.id }}/assign"> Assign User </a>
                         <button type="button" class="btn btn-sm btn-primary" data-toggle="modal"
                                 data-target="#shareSurveyModal"
                                 data-whatever="/engagement/{{ survey.engagement.id }}/survey/{{ survey.id }}/answer">
@@ -49,6 +64,6 @@
     </table>
 {% else %}
     <div class="panel-body">
-        <p>No Questionnaire found.</p>
+        <p>No questionnaires found.</p>
     </div>
 {% endif %}

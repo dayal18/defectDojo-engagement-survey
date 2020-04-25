@@ -10,9 +10,10 @@ from crispy_forms.layout import Layout
 from django import forms
 from django.db.models import Count
 from dojo.forms import MultipleSelectWithPop
+from dojo.models import User, Product
 
 from .models import Engagement_Survey, Answered_Survey, TextAnswer, ChoiceAnswer, Choice, Question, TextQuestion, \
-    ChoiceQuestion
+    ChoiceQuestion, General_Survey
 
 
 # List of validator_name:func_name
@@ -32,11 +33,13 @@ class QuestionForm(forms.Form):
         if 'form_tag' in kwargs:
             del kwargs['form_tag']
 
+        self.engagement_survey = kwargs.get('engagement_survey')
+
         self.answered_survey = kwargs.get('answered_survey')
         if not self.answered_survey:
-            raise ValueError('Need an answered_survey to save answers too')
-
-        del kwargs['answered_survey']
+            del kwargs['engagement_survey']
+        else:
+            del kwargs['answered_survey']
 
         self.helper.form_class = kwargs.get('form_class', '')
 
@@ -82,7 +85,7 @@ class TextQuestionForm(QuestionForm):
 
         if not answer:
             if self.fields['answer'].required:
-                raise forms.ValidationError, 'Required'
+                raise forms.ValidationError('Required')
             return
 
         text_answer, created = TextAnswer.objects.get_or_create(
@@ -159,7 +162,7 @@ class ChoiceQuestionForm(QuestionForm):
 
         if not real_answer:
             if self.fields['answer'].required:
-                raise forms.ValidationError, 'Required'
+                raise forms.ValidationError('Required')
             return
 
         choices = Choice.objects.filter(id__in=real_answer)
@@ -192,14 +195,29 @@ class Add_Survey_Form(forms.ModelForm):
         queryset=Engagement_Survey.objects.all(),
         required=True,
         widget=forms.widgets.Select(),
-        help_text='Select the Survey to add.')
+        help_text='Select the questionnaire to add.')
 
     class Meta:
         model = Answered_Survey
         exclude = ('responder',
                    'completed',
                    'engagement',
-                   'answered_on')
+                   'answered_on',
+                   'assignee')
+
+
+class AddGeneralSurveyForm(forms.ModelForm):
+    survey = forms.ModelChoiceField(
+        queryset=Engagement_Survey.objects.all(),
+        required=True,
+        widget=forms.widgets.Select(),
+        help_text='Select the questionnaire to add.')
+    expiration = forms.DateField(widget=forms.TextInput(
+        attrs={'class': 'datepicker', 'autocomplete': 'off'}))
+
+    class Meta:
+        model = General_Survey
+        exclude = ('num_responses', 'generated')
 
 
 class Delete_Survey_Form(forms.ModelForm):
@@ -212,6 +230,19 @@ class Delete_Survey_Form(forms.ModelForm):
                    'completed',
                    'engagement',
                    'answered_on',
+                   'survey',
+                   'assignee')
+
+
+class DeleteGeneralSurveyForm(forms.ModelForm):
+    id = forms.IntegerField(required=True,
+                            widget=forms.widgets.HiddenInput())
+
+    class Meta:
+        model = General_Survey
+        exclude = ('num_responses',
+                   'generated',
+                   'expiration',
                    'survey')
 
 
@@ -237,7 +268,7 @@ class EditSurveyQuestionsForm(forms.ModelForm):
     questions = forms.ModelMultipleChoiceField(
         Question.objects.all(),
         required=True,
-        help_text="Select questions to include on this survey.  Field can be used to search available questions.",
+        help_text="Select questions to include on this questionnaire.  Field can be used to search available questions.",
         widget=MultipleSelectWithPop(attrs={'size': '11'}))
 
     class Meta:
@@ -252,13 +283,12 @@ class CreateQuestionForm(forms.Form):
                                   initial=False,
                                   required=False,
                                   widget=forms.CheckboxInput(attrs={'data-type': 'both'}))
-
-
-class CreateTextQuestionForm(forms.Form):
     text = forms.CharField(widget=forms.Textarea(attrs={'data-type': 'text'}),
                            label="Question Text",
                            help_text="The actual question.")
 
+
+class CreateTextQuestionForm(forms.Form):
     class Meta:
         model = TextQuestion
         exclude = ['order', 'optional']
@@ -301,9 +331,6 @@ class MultiExampleField(forms.fields.MultiValueField):
 
 
 class CreateChoiceQuestionForm(forms.Form):
-    c_text = forms.CharField(widget=forms.Textarea(attrs={'data-type': 'choice'}),
-                             label="Question Text",
-                             help_text="The actual question.")
     multichoice = forms.BooleanField(required=False,
                                      initial=False,
                                      widget=forms.CheckboxInput(attrs={'data-type': 'choice'}),
@@ -344,3 +371,30 @@ class AddChoicesForm(forms.ModelForm):
     class Meta:
         model = Choice
         exclude = []
+
+
+class AssignUserForm(forms.ModelForm):
+    assignee = forms.CharField(required=False,
+                                widget=forms.widgets.HiddenInput())
+
+    def __init__(self, *args, **kwargs):
+        assignee = None
+        if 'assignee' in kwargs:
+            assignee = kwargs.pop('asignees')
+        super(AssignUserForm, self).__init__(*args, **kwargs)
+        if assignee is None:
+            self.fields['assignee'] = forms.ModelChoiceField(queryset=User.objects.all(), empty_label='Not Assigned', required=False)
+        else:
+            self.fields['assignee'].initial = assignee
+
+    class Meta:
+        model = Answered_Survey
+        exclude = ['engagement', 'survey', 'responder', 'completed', 'answered_on']
+
+
+class AddEngagementForm(forms.Form):
+    product = forms.ModelChoiceField(
+        queryset=Product.objects.all(),
+        required=True,
+        widget=forms.widgets.Select(),
+        help_text='Select which product to attach Engagment')

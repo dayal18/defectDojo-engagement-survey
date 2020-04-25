@@ -8,8 +8,8 @@ from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, \
     PolymorphicChildModelAdmin
 
-from models import Question, TextQuestion, ChoiceQuestion, Choice
-from models import Answer, TextAnswer, ChoiceAnswer, Engagement_Survey, \
+from .models import Question, TextQuestion, ChoiceQuestion, Choice
+from .models import Answer, TextAnswer, ChoiceAnswer, Engagement_Survey, \
     Answered_Survey
 
 
@@ -40,11 +40,13 @@ class QuestionParentAdmin(PolymorphicParentModelAdmin):
 
     base_model = Question
     child_models = (
-        (TextQuestion, TextQuestionAdmin),
-        (ChoiceQuestion, ChoiceQuestionAdmin),
+        TextQuestion,
+        ChoiceQuestion
     )
 
 
+admin.site.register(TextQuestion, TextQuestionAdmin)
+admin.site.register(ChoiceQuestion, ChoiceQuestionAdmin)
 admin.site.register(Question, QuestionParentAdmin)
 admin.site.register(Choice)
 
@@ -81,10 +83,13 @@ class AnswerParentAdmin(PolymorphicParentModelAdmin):
 
     base_model = Answer
     child_models = (
-        (TextAnswer, TextAnswerAdmin),
-        (ChoiceAnswer, ChoiceAnswerAdmin),
+        TextAnswer,
+        ChoiceAnswer,
     )
+    
 
+admin.site.register(TextAnswer, TextAnswerAdmin)
+admin.site.register(ChoiceAnswer, ChoiceAnswerAdmin)
 admin.site.register(Answer, AnswerParentAdmin)
 admin.site.register(Engagement_Survey)
 admin.site.register(Answered_Survey)

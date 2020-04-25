@@ -28,7 +28,7 @@ before installation.
 
 clone the repository:
 
-    git clone https://github.com/dayal18/defectDojo-engagement-survey.git
+    git clone https://github.com/grendel513/defectDojo-engagement-survey.git
 
 run the install script:
     
@@ -92,7 +92,7 @@ The creation of surveys is done via Django's Admin Interface
 Questions or Comments?
 ======================
 
-Let me know if you have any questions or comments.
+Let me know if you have any questions or comments.  Send me an email to jay.paz@gmail.com
 
 Contributing
 ============

@@ -7,14 +7,15 @@ from setuptools import setup, find_packages
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+
 setup(
     name="defectDojo_engagement_survey",
     version="1.0.1",
     description="DefectDojo Engagement Survey",
     long_description=read('README.md'),
-    url="https://github.com/dayal18/defectDojo-engagement-survey",
-    author="Manav Nagla",
-    author_email="dayal18@gmail.com",
+    url="https://github.com/grendel513/defectDojo-engagement-survey",
+    author="Jay Paz",
+    author_email="jay.paz@gmail.com",
     packages=find_packages(),
     include_package_data=True,
     classifiers=[
@@ -34,5 +35,5 @@ setup(
         'django-crispy-forms',
         'django-overextends',
         'django_extensions',
-        ]
+                    ]
 )

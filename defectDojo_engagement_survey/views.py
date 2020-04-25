@@ -10,20 +10,23 @@ from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http.response import HttpResponseRedirect, HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404
 from django.utils.html import escape
 from pytz import timezone
+from datetime import timedelta
+from django.utils import timezone as tz
 
 from defectDojo_engagement_survey.filters import SurveyFilter, QuestionFilter
 from defectDojo_engagement_survey.models import Question
-from dojo.models import Engagement
+from dojo.models import Engagement, System_Settings
 from dojo.utils import add_breadcrumb, get_page_items
 from .forms import Add_Survey_Form, Delete_Survey_Form, CreateSurveyForm, Delete_Eng_Survey_Form, \
-    EditSurveyQuestionsForm, CreateQuestionForm, CreateTextQuestionForm, \
-    CreateChoiceQuestionForm, EditTextQuestionForm, EditChoiceQuestionForm, AddChoicesForm
-from .models import Answered_Survey, Engagement_Survey, Answer, TextQuestion, ChoiceQuestion, Choice
+    EditSurveyQuestionsForm, CreateQuestionForm, CreateTextQuestionForm, AssignUserForm, \
+    CreateChoiceQuestionForm, EditTextQuestionForm, EditChoiceQuestionForm, AddChoicesForm, \
+    AddEngagementForm, AddGeneralSurveyForm, DeleteGeneralSurveyForm
+from .models import Answered_Survey, Engagement_Survey, Answer, TextQuestion, ChoiceQuestion, Choice, General_Survey
 
 localtz = timezone('America/Chicago')
 
@@ -49,15 +52,15 @@ def delete_engagement_survey(request, eid, sid):
             survey.delete()
             messages.add_message(request,
                                  messages.SUCCESS,
-                                 'Survey deleted successfully.',
+                                 'Questionnaire deleted successfully.',
                                  extra_tags='alert-success')
             return HttpResponseRedirect('/engagement/%s' % eid)
         else:
             messages.add_message(request,
                                  messages.ERROR,
-                                 'Unable to delete survey.',
+                                 'Unable to delete questionnaire.',
                                  extra_tags='alert-danger')
-    add_breadcrumb(title="Delete " + survey.survey.name + " Survey", top_level=False, request=request)
+    add_breadcrumb(title="Delete " + survey.survey.name + " questionnaire", top_level=False, request=request)
     return render(request, 'defectDojo-engagement-survey/delete_survey.html',
                   {'survey': survey,
                    'form': form,
@@ -70,11 +73,17 @@ def answer_survey(request, eid, sid):
     survey = get_object_or_404(Answered_Survey, id=sid)
     engagement = get_object_or_404(Engagement, id=eid)
     prod = engagement.product
+    settings = System_Settings.objects.all()[0]
 
-    auth = request.user.is_staff or request.user in prod.authorized_users.all()
-    if not auth:
-        # will render 403
-        raise PermissionDenied
+    if not settings.allow_anonymous_survey_repsonse:
+        auth = request.user.is_staff or request.user in prod.authorized_users.all()
+        if not auth:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'You must be logged in to answer questionnaire. Otherwise, enable anonymous response in system settings.',
+                                 extra_tags='alert-danger')
+            # will render 403
+            raise PermissionDenied
 
     questions = get_answered_questions(survey=survey, read_only=False)
 
@@ -85,7 +94,7 @@ def answer_survey(request, eid, sid):
                          answered_survey=survey,
                          question=q, form_tag=False)
             for q in survey.survey.questions.all()
-            ]
+                    ]
 
         questions_are_valid = []
 
@@ -105,12 +114,14 @@ def answer_survey(request, eid, sid):
                                  messages.SUCCESS,
                                  'Successfully answered, all answers valid.',
                                  extra_tags='alert-success')
+            return HttpResponseRedirect(
+                    reverse('view_engagement', args=(engagement.id, )))
         else:
             messages.add_message(request,
                                  messages.ERROR,
-                                 'Survey has errors, please correct.',
+                                 'Questionnaire has errors, please correct.',
                                  extra_tags='alert-danger')
-    add_breadcrumb(title="Answer " + survey.survey.name + " Survey", top_level=False, request=request)
+    add_breadcrumb(title="Answer " + survey.survey.name + " questionnaire", top_level=False, request=request)
     return render(request,
                   'defectDojo-engagement-survey/answer_survey.html',
                   {'survey': survey,
@@ -120,18 +131,45 @@ def answer_survey(request, eid, sid):
 
 
 @user_passes_test(lambda u: u.is_staff)
+def assign_survey(request, eid, sid):
+    survey = get_object_or_404(Answered_Survey, id=sid)
+    engagement = get_object_or_404(Engagement, id=eid)
+    prod = engagement.product
+
+    auth = request.user.is_staff or request.user in prod.authorized_users.all()
+    if not auth:
+        # will render 403
+        raise PermissionDenied
+
+    form = AssignUserForm(instance=survey)
+    if request.method == 'POST':
+        form = AssignUserForm(request.POST)
+        if form.is_valid():
+            user = form.cleaned_data['assignee']
+            survey.assignee = user
+            survey.save()
+            return HttpResponseRedirect(reverse('view_engagement', args=(engagement.id,)))
+    add_breadcrumb(title="Assign questionnaire", top_level=False, request=request)
+    return render(request,
+                  'defectDojo-engagement-survey/assign_survey.html',
+                  {'survey': survey,
+                   'form': form,
+                   })
+
+
+@user_passes_test(lambda u: u.is_staff)
 def view_survey(request, eid, sid):
     survey = get_object_or_404(Answered_Survey, id=sid)
     engagement = get_object_or_404(Engagement, id=eid)
 
     questions = get_answered_questions(survey=survey, read_only=True)
-    add_breadcrumb(title=survey.survey.name + " Survey Responses", top_level=False, request=request)
+    add_breadcrumb(title=survey.survey.name + " questionnaire responses", top_level=False, request=request)
     return render(request, 'defectDojo-engagement-survey/view_survey.html',
                   {'survey': survey,
                    'user': request.user,
                    'engagement': engagement,
                    'questions': questions,
-                   'name': survey.survey.name + " Survey Responses"
+                   'name': survey.survey.name + " Questionnaire Responses"
                    })
 
 
@@ -169,7 +207,7 @@ def add_survey(request, eid):
             survey.save()
             messages.add_message(request,
                                  messages.SUCCESS,
-                                 'Survey successfully added, answers pending.',
+                                 'Questionnaire successfully added, answers pending.',
                                  extra_tags='alert-success')
             if 'respond_survey' in request.POST:
                 return HttpResponseRedirect(
@@ -179,10 +217,10 @@ def add_survey(request, eid):
         else:
             messages.add_message(request,
                                  messages.ERROR,
-                                 'Survey could not be added.',
+                                 'Questionnaire could not be added.',
                                  extra_tags='alert-danger')
     form.fields["survey"].queryset = surveys
-    add_breadcrumb(title="Add Survey", top_level=False, request=request)
+    add_breadcrumb(title="Add Questionnaire", top_level=False, request=request)
     return render(request, 'defectDojo-engagement-survey/add_survey.html',
                   {'surveys': surveys,
                    'user': user,
@@ -202,7 +240,7 @@ def edit_survey(request, sid):
     if len(answered) > 0:
         messages.add_message(request,
                              messages.ERROR,
-                             'This survey already has answered instances. If you change it, the responses may no longer'
+                             'This questionnaire already have responses. If you change it, the responses may no longer'
                              ' be valid.',
                              extra_tags='alert-info')
 
@@ -216,12 +254,13 @@ def edit_survey(request, sid):
 
                 messages.add_message(request,
                                      messages.SUCCESS,
-                                     'Survey successfully updated, you may now add/edit questions.',
+                                     'Questionnaire successfully updated, you may now add/edit questions.',
                                      extra_tags='alert-success')
+                return HttpResponseRedirect(reverse('survey', args=(survey.id,)))
             else:
                 messages.add_message(request,
                                      messages.SUCCESS,
-                                     'No changes detected, survey not updated.',
+                                     'No changes detected, questionnaire not updated.',
                                      extra_tags='alert-warning')
             if 'add_questions' in request.POST:
                 return HttpResponseRedirect(reverse('edit_survey_questions', args=(survey.id,)))
@@ -234,7 +273,7 @@ def edit_survey(request, sid):
     return render(request, 'defectDojo-engagement-survey/create_survey.html',
                   {"survey": survey,
                    "form": form,
-                   "name": "Edit Survey",
+                   "name": "Edit Questionnaire",
                    })
 
 
@@ -243,7 +282,7 @@ def delete_survey(request, sid):
     survey = get_object_or_404(Engagement_Survey, id=sid)
     form = Delete_Eng_Survey_Form(instance=survey)
 
-    from django.contrib.admin.util import NestedObjects
+    from django.contrib.admin.utils import NestedObjects
     from django.db import DEFAULT_DB_ALIAS
 
     collector = NestedObjects(using=DEFAULT_DB_ALIAS)
@@ -257,10 +296,10 @@ def delete_survey(request, sid):
                 survey.delete()
                 messages.add_message(request,
                                      messages.SUCCESS,
-                                     'Survey and relationships removed.',
+                                     'Questionnaire and relationships removed.',
                                      extra_tags='alert-success')
                 return HttpResponseRedirect(reverse('survey'))
-    add_breadcrumb(title="Delete Survey", top_level=False, request=request)
+    add_breadcrumb(title="Delete Questionnaire", top_level=False, request=request)
     return render(request, 'defectDojo-engagement-survey/delete_survey.html',
                   {'survey': survey,
                    'form': form,
@@ -280,22 +319,22 @@ def create_survey(request):
 
             messages.add_message(request,
                                  messages.SUCCESS,
-                                 'Survey successfully created, you may now add questions.',
+                                 'Questionnaire successfully created, you may now add questions.',
                                  extra_tags='alert-success')
             if 'add_questions' in request.POST:
                 return HttpResponseRedirect(reverse('edit_survey_questions', args=(survey.id,)))
             else:
-                return HttpResponseRedirect(reverse('edit_survey', args=(survey.id,)))
+                return HttpResponseRedirect(reverse('survey'))
         else:
             messages.add_message(request,
                                  messages.ERROR,
                                  'Please correct any errors displayed below.',
                                  extra_tags='alert-danger')
-    add_breadcrumb(title="Create Survey", top_level=False, request=request)
+    add_breadcrumb(title="Create Questionnaire", top_level=False, request=request)
     return render(request, 'defectDojo-engagement-survey/create_survey.html',
                   {"survey": survey,
                    "form": form,
-                   "name": "Create Survey",
+                   "name": "Create Questionnaire",
                    })
 
 
@@ -322,22 +361,23 @@ def edit_survey_questions(request, sid):
             if reverted:
                 messages.add_message(request,
                                      messages.SUCCESS,
-                                     'Answered surveys associated with this survey have been set to uncompleted.',
+                                     'Responses associated with this questionnaire have been set to uncompleted.',
                                      extra_tags='alert-warning')
             messages.add_message(request,
                                  messages.SUCCESS,
-                                 'Survey questions successfully saved.',
+                                 'Questions successfully saved.',
                                  extra_tags='alert-success')
+            return HttpResponseRedirect(reverse('survey'))
         else:
             messages.add_message(request,
                                  messages.ERROR,
-                                 'Survey questions not saved, please correct any errors displayed below.',
+                                 'Questions not saved, please correct any errors displayed below.',
                                  extra_tags='alert-success')
-    add_breadcrumb(title="Update Survey Questions", top_level=False, request=request)
+    add_breadcrumb(title="Update Questions", top_level=False, request=request)
     return render(request, 'defectDojo-engagement-survey/edit_survey_questions.html',
                   {"survey": survey,
                    "form": form,
-                   "name": "Update Survey Questions",
+                   "name": "Update Questions",
                    })
 
 
@@ -346,12 +386,19 @@ def survey(request):
     user = request.user
     surveys = Engagement_Survey.objects.all()
     surveys = SurveyFilter(request.GET, queryset=surveys)
-    paged_surveys = get_page_items(request, surveys, 25)
-    add_breadcrumb(title="All Surveys", top_level=True, request=request)
+    paged_surveys = get_page_items(request, surveys.qs, 25)
+    general_surveys = General_Survey.objects.all()
+    for survey in general_surveys:
+        survey_exp = survey.expiration
+        if survey.expiration < tz.now():
+            survey.delete()
+
+    add_breadcrumb(title="All Questionnaire", top_level=True, request=request)
     return render(request, 'defectDojo-engagement-survey/list_surveys.html',
                   {"surveys": paged_surveys,
                    "filtered": surveys,
-                   "name": "All Surveys",
+                   "general": general_surveys,
+                   "name": "All Questionnaire",
                    })
 
 
@@ -360,7 +407,7 @@ def questions(request):
     user = request.user
     questions = Question.objects.all()
     questions = QuestionFilter(request.GET, queryset=questions)
-    paged_questions = get_page_items(request, questions, 25)
+    paged_questions = get_page_items(request, questions.qs, 25)
     add_breadcrumb(title="All Questions", top_level=False, request=request)
     return render(request, 'defectDojo-engagement-survey/list_questions.html',
                   {"questions": paged_questions,
@@ -377,6 +424,9 @@ def create_question(request):
     choiceQuestionFrom = CreateChoiceQuestionForm()
     created_question = None
 
+    if 'return' in request.GET:
+        return HttpResponseRedirect(reverse('survey'))
+
     if request.method == 'POST':
         form = CreateQuestionForm(request.POST)
         textQuestionForm = CreateTextQuestionForm(request.POST)
@@ -390,7 +440,7 @@ def create_question(request):
                 if textQuestionForm.is_valid():
                     created_question = TextQuestion.objects.create(optional=form.cleaned_data['optional'],
                                                                    order=form.cleaned_data['order'],
-                                                                   text=textQuestionForm.cleaned_data['text'])
+                                                                   text=form.cleaned_data['text'])
                     messages.add_message(request,
                                          messages.SUCCESS,
                                          'Text Question added successfully.',
@@ -404,7 +454,7 @@ def create_question(request):
 
                     created_question = ChoiceQuestion.objects.create(optional=form.cleaned_data['optional'],
                                                                      order=form.cleaned_data['order'],
-                                                                     text=choiceQuestionFrom.cleaned_data['c_text'],
+                                                                     text=form.cleaned_data['text'],
                                                                      multichoice=choiceQuestionFrom.cleaned_data[
                                                                          'multichoice'])
 
@@ -444,12 +494,12 @@ def edit_question(request, qid):
     survey = Engagement_Survey.objects.filter(questions__in=[question])
     reverted = False
 
-    if survey is not None:
-        answered = Answered_Survey.objects.filter(survey=survey)
-        if len(answered) > 0:
+    if survey:
+        answered = Answered_Survey.objects.filter(survey__in=survey)
+        if answered.count() > 0:
             messages.add_message(request,
                                  messages.ERROR,
-                                 'This question is part of an already answered survey. If you change it, the responses '
+                                 'This question is part of an already answered questionnaire. If you change it, the responses '
                                  'may no longer be valid.',
                                  extra_tags='alert-info')
 
@@ -482,13 +532,14 @@ def edit_question(request, qid):
             if reverted:
                 messages.add_message(request,
                                      messages.SUCCESS,
-                                     'Answered surveys associated with this survey have been set to uncompleted.',
+                                     'Responses associated with this questionnaire have been set to uncompleted.',
                                      extra_tags='alert-warning')
 
             messages.add_message(request,
                                  messages.SUCCESS,
                                  'Question updated successfully.',
                                  extra_tags='alert-success')
+            return HttpResponseRedirect(reverse('questions'))
     add_breadcrumb(title="Edit Question", top_level=False, request=request)
     return render(request, 'defectDojo-engagement-survey/edit_question.html', {
         'name': 'Edit Question',
@@ -519,3 +570,241 @@ def add_choices(request):
     return render(request, 'defectDojo-engagement-survey/add_choices.html', {
         'name': 'Add Choice',
         'form': form})
+
+
+# Empty survey functions
+@user_passes_test(lambda u: u.is_staff)
+def add_empty_survey(request):
+    user = request.user
+    surveys = Engagement_Survey.objects.all()
+    form = AddGeneralSurveyForm()
+    engagement = None
+    if request.method == 'POST':
+        form = AddGeneralSurveyForm(request.POST)
+        if form.is_valid():
+            survey = form.save(commit=False)
+            survey.generated = tz.now()
+            survey.save()
+            messages.add_message(request,
+                                 messages.SUCCESS,
+                                 'Engagement Created, questionnaire successfully added, answers pending.',
+                                 extra_tags='alert-success')
+            if 'respond_survey' in request.POST:
+                return HttpResponseRedirect('/dashboard')
+
+            return HttpResponseRedirect('/survey')
+        else:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Survey could not be added.',
+                                 extra_tags='alert-danger')
+    form.fields["survey"].queryset = surveys
+    add_breadcrumb(title="Add new questionnaire", top_level=False, request=request)
+    return render(request, 'defectDojo-engagement-survey/add_survey.html',
+                  {'surveys': surveys,
+                   'user': user,
+                   'form': form,
+                   'engagement': engagement})
+
+
+@user_passes_test(lambda u: u.is_staff)
+def view_empty_survey(request, esid):
+    survey = get_object_or_404(Answered_Survey, id=esid)
+    engagement = None
+
+    questions = get_answered_questions(survey=survey, read_only=True)
+    add_breadcrumb(title=survey.survey.name + " Responses", top_level=False, request=request)
+    return render(request, 'defectDojo-engagement-survey/view_survey.html',
+                  {'survey': survey,
+                   'user': request.user,
+                   'engagement': engagement,
+                   'questions': questions,
+                   'name': survey.survey.name + " Responses"
+                   })
+
+
+@user_passes_test(lambda u: u.is_staff)
+def delete_empty_survey(request, esid):
+    engagement = None
+    survey = get_object_or_404(Answered_Survey, id=esid)
+
+    questions = get_answered_questions(survey=survey, read_only=True)
+
+    form = Delete_Survey_Form(instance=survey)
+
+    if request.method == 'POST':
+        form = Delete_Survey_Form(request.POST, instance=survey)
+        if form.is_valid():
+            answers = Answer.objects.filter(
+                question__in=[
+                    question.id for question in survey.survey.questions.all()],
+                answered_survey=survey)
+            for answer in answers:
+                answer.delete()
+            survey.delete()
+            messages.add_message(request,
+                                 messages.SUCCESS,
+                                 'Questionnaire deleted successfully.',
+                                 extra_tags='alert-success')
+            return HttpResponseRedirect('/survey')
+        else:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Unable to delete questionnaire.',
+                                 extra_tags='alert-danger')
+    add_breadcrumb(title="Delete " + survey.survey.name + " questionnaire", top_level=False, request=request)
+    return render(request, 'defectDojo-engagement-survey/delete_survey.html',
+                  {'survey': survey,
+                   'form': form,
+                   'engagement': engagement,
+                   'questions': questions,
+                   })
+
+
+@user_passes_test(lambda u: u.is_staff)
+def delete_general_survey(request, esid):
+    engagement = None
+    questions = None
+    survey = get_object_or_404(General_Survey, id=esid)
+
+    form = DeleteGeneralSurveyForm(instance=survey)
+
+    if request.method == 'POST':
+        form = DeleteGeneralSurveyForm(request.POST, instance=survey)
+        if form.is_valid():
+            survey.delete()
+            messages.add_message(request,
+                                 messages.SUCCESS,
+                                 'Questionnaire deleted successfully.',
+                                 extra_tags='alert-success')
+            return HttpResponseRedirect('/survey')
+        else:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Unable to delete questionnaire.',
+                                 extra_tags='alert-danger')
+    add_breadcrumb(title="Delete " + survey.survey.name + " questionnaire", top_level=False, request=request)
+    return render(request, 'defectDojo-engagement-survey/delete_survey.html',
+                  {'survey': survey,
+                   'form': form,
+                   'engagement': engagement,
+                   'questions': questions,
+                   })
+
+
+def answer_empty_survey(request, esid):
+    general_survey = get_object_or_404(General_Survey, id=esid)
+    engagement_survey = get_object_or_404(Engagement_Survey, id=general_survey.survey_id)
+    engagement, survey = None, None
+    
+    settings = System_Settings.objects.all()[0]
+
+    if not settings.allow_anonymous_survey_repsonse:
+        auth = request.user.is_staff
+        if not auth:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'You must be logged in to answer questionnaire. Otherwise, enable anonymous response in system settings.',
+                                 extra_tags='alert-danger')
+            # will render 403
+            raise PermissionDenied
+
+    questions = [q.get_form()(prefix=str(q.id),
+                              engagement_survey=engagement_survey,
+                              question=q, form_tag=False)
+                 for q in engagement_survey.questions.all()
+                 ]
+
+    if request.method == 'POST':
+        survey = Answered_Survey(survey=engagement_survey)
+        survey.save()
+        questions = [
+            q.get_form()(request.POST or None,
+                         prefix=str(q.id),
+                         answered_survey=survey,
+                         question=q, form_tag=False)
+            for q in survey.survey.questions.all()
+                    ]
+
+        questions_are_valid = []
+
+        for question in questions:
+            valid = question.is_valid()
+            questions_are_valid.append(valid)
+            if valid:
+                question.save()
+
+        questions_are_valid = all(questions_are_valid)
+        if questions_are_valid:
+            survey.completed = True
+            survey.responder = request.user if not request.user.is_anonymous else None
+            survey.answered_on = date.today()
+            survey.save()
+            general_survey.num_responses = general_survey.num_responses + 1
+            general_survey.save()
+            if request.user.is_anonymous:
+                message = 'Your responses have been recorded.'
+            else:
+                message = 'Successfully submitted questionnaire, all answers valid.'
+
+            messages.add_message(request,
+                                 messages.SUCCESS,
+                                 message,
+                                 extra_tags='alert-success')
+            return HttpResponseRedirect(
+                    reverse('dashboard'))
+        else:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Questionnaire has errors, please correct.',
+                                 extra_tags='alert-danger')
+    add_breadcrumb(title="Answer new " + engagement_survey.name + " questionnaire", top_level=False, request=request)
+    if survey is None:
+        survey = engagement_survey
+    return render(request,
+                  'defectDojo-engagement-survey/answer_survey.html',
+                  {'survey': survey,
+                   'engagement': engagement,
+                   'questions': questions,
+                   })
+
+
+def engagement_empty_survey(request, esid):
+    survey = get_object_or_404(Answered_Survey, id=esid)
+    engagement = None
+    settings = System_Settings.objects.all()[0]
+    form = AddEngagementForm()
+
+    if not settings.allow_anonymous_survey_repsonse:
+        auth = request.user.is_staff
+        if not auth:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'You must be logged in to answer questionnaire. Otherwise, enable anonymous response in system settings.',
+                                 extra_tags='alert-danger')
+            # will render 403
+            raise PermissionDenied
+
+    if request.method == 'POST':
+        form = AddEngagementForm(request.POST)
+        if form.is_valid():
+            product = form.cleaned_data.get('product')
+            engagement = Engagement(product_id=product.id,
+                                    target_start=tz.now().date(),
+                                    target_end=tz.now().date() + timedelta(days=7))
+            engagement.save()
+            survey.engagement = engagement
+            survey.save()
+            messages.add_message(request,
+                                 messages.SUCCESS,
+                                 'Engagement created and questionnaire successfully linked.',
+                                 extra_tags='alert-success')
+            return HttpResponseRedirect('/engagement/%s/edit' % engagement.id)
+        else:
+            messages.add_message(request,
+                                 messages.ERROR,
+                                 'Questionnaire could not be added.',
+                                 extra_tags='alert-danger')
+    add_breadcrumb(title="Add new questionnaire", top_level=False, request=request)
+    return render(request, 'defectDojo-engagement-survey/add_engagement.html',
+                  {'form': form})

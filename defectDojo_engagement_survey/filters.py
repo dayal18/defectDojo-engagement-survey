@@ -1,18 +1,21 @@
 from django.utils.translation import ugettext_lazy as _
 from django.utils import six
 from django_filters import FilterSet, CharFilter, BooleanFilter, ChoiceFilter
+from django.contrib.contenttypes.models import ContentType
 
-from .models import Engagement_Survey, Question
+from .models import Engagement_Survey, Question, TextQuestion, ChoiceQuestion
 
 
 class SurveyFilter(FilterSet):
-    name = CharFilter(lookup_type='icontains')
-    description = CharFilter(lookup_type='icontains')
+    name = CharFilter(lookup_expr='icontains')
+    description = CharFilter(lookup_expr='icontains')
     active = BooleanFilter()
 
     class Meta:
         model = Engagement_Survey
         exclude = ['questions']
+
+    survey_set = FilterSet
 
 
 class QuestionTypeFilter(ChoiceFilter):
@@ -20,14 +23,10 @@ class QuestionTypeFilter(ChoiceFilter):
         return qs.all()
 
     def text_question(self, qs, name):
-        return qs.filter(**{
-            'polymorphic_ctype__name': 'text question',
-        })
+        return qs.filter(polymorphic_ctype=ContentType.objects.get_for_model(TextQuestion))
 
     def choice_question(self, qs, name):
-        return qs.filter(**{
-            'polymorphic_ctype__name': 'choice question',
-        })
+        return qs.filter(polymorphic_ctype=ContentType.objects.get_for_model(ChoiceQuestion))
 
     options = {
         '': (_('Any'), any),
@@ -45,13 +44,15 @@ class QuestionTypeFilter(ChoiceFilter):
             value = int(value)
         except (ValueError, TypeError):
             value = ''
-        return self.options[value][1](self, qs, self.name)
+        return self.options[value][1](self, qs, self.options[value][0])
 
 
 class QuestionFilter(FilterSet):
-    text = CharFilter(lookup_type='icontains')
+    text = CharFilter(lookup_expr='icontains')
     type = QuestionTypeFilter()
 
     class Meta:
         model = Question
         exclude = ['polymorphic_ctype', 'created', 'modified', 'order']
+
+    question_set = FilterSet

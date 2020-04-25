@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="well">
-<h4>Response for {{survey}} questionnaire for {{engagement}}</h4>
+{% if engagement %}
+    <h4>Questionnaire {{survey}} for {{engagement}}</h4>
+{% else %}
+    <h4>Questionnaire {{survey}}</h4>
+{% endif %}
 <p>{{ survey.survey.description }} </p>
 </div>
 
@@ -12,7 +16,7 @@
 
 <div class="form-group clearfix">
     <div class="col-sm-offset-2 col-sm-10">
-    <input class="btn btn-primary" type="submit" name="save_survey" value="Save questionnaire" />
+    <input class="btn btn-primary" type="submit" name="save_survey" value="Save Questionnaire" />
     <br/>
 </div>
 </div>
