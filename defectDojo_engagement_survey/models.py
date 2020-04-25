@@ -25,7 +25,7 @@ class Question(PolymorphicModel, TimeStampedModel):
 
     optional = models.BooleanField(
         default=False,
-        help_text="If selected, this question is optional")
+        help_text="If selected, user doesn't have to answer this question")
 
     text = models.TextField(blank=False, help_text='The question text')
 
@@ -96,8 +96,9 @@ class Answer(PolymorphicModel, TimeStampedModel):
 
 
 class TextAnswer(Answer):
-    answer = models.CharField(max_length=1000, null=False, blank=False,
-                            editable=True)
+    answer = models.TextField(
+        blank=False,
+        help_text='The answer text')
 
     def __unicode__(self):
         return self.answer

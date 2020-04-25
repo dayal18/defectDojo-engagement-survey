@@ -67,7 +67,7 @@ class TextQuestionForm(QuestionForm):
 
         self.fields['answer'] = forms.CharField(
             label=self.question.text,
-            widget=forms.TextInput(),
+            widget=forms.Textarea(),
             required=not self.question.optional,
             initial=initial_answer,
         )
@@ -237,7 +237,7 @@ class EditSurveyQuestionsForm(forms.ModelForm):
     questions = forms.ModelMultipleChoiceField(
         Question.objects.all(),
         required=True,
-        help_text="Select questions to include on this questionnaire.  Field can be used to search available questions.",
+        help_text="Select questions to include on this survey.  Field can be used to search available questions.",
         widget=MultipleSelectWithPop(attrs={'size': '11'}))
 
     class Meta:
