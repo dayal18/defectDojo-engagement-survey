@@ -12,9 +12,9 @@ setup(
     version="1.0.1",
     description="DefectDojo Engagement Survey",
     long_description=read('README.md'),
-    url="https://github.com/grendel513/defectDojo-engagement-survey",
-    author="Jay Paz",
-    author_email="jay.paz@gmail.com",
+    url="https://github.com/dayal18/defectDojo-engagement-survey.git",
+    author="Manav Nagla",
+    author_email="dayal18@gmail.com",
     packages=find_packages(),
     include_package_data=True,
     classifiers=[
