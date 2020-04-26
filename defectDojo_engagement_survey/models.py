@@ -172,8 +172,7 @@ class Answer(PolymorphicModel, TimeStampedModel):
 
 
 class TextAnswer(Answer):
-    answer = models.CharField(max_length=1000, blank=False,
-        editable=True, default='')
+    answer = models.TextField(blank=False, default='')
 
     def __unicode__(self):
         return self.answer
