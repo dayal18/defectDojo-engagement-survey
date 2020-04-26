@@ -179,7 +179,7 @@ class TextAnswerForm(forms.ModelForm):
         model = Answer
         fields = ['answer']
 
-class TextAnswerAdmin(admin.ModelAdmin):
+class TextAnswer(admin.ModelAdmin):
     form = TextAnswerForm
     fields = ('answer',)
     
