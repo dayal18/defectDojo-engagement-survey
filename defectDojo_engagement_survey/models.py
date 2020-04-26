@@ -9,6 +9,7 @@ from django import forms
 from django_extensions.db.models import TimeStampedModel
 from polymorphic.models import PolymorphicModel
 from auditlog.registry import auditlog
+from django.contrib import admin
 
 from dojo.models import Engagement
 
