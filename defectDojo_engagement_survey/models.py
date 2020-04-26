@@ -173,19 +173,23 @@ class Answer(PolymorphicModel, TimeStampedModel):
 class TextAnswerForm(forms.ModelForm):
     answer = forms.TextField(widget=forms.TextInput)
 
-	class Meta:
-		model = Answer
-		fields = ['answer']
+    class Meta:
+        model = Answer
+        fields = ['answer']
 
-class TextAnswerAdmin(admin.MoedlAdmin):
-	form = TextAnswerForm
+class TextAnswerAdmin(admin.ModelAdmin):
+    form = TextAnswerForm
     fields = ('answer',)
-
-#class TextAnswer(Answer):
-#    answer = models.TextField(blank=False, default='')
-
+    
     def __unicode__(self):
         return self.answer
+
+#class TextAnswer(Answer):
+#    answer = models.TextField(blank=False,
+#        editable=True, default='')
+#
+#    def __unicode__(self):
+#        return self.answer
 
 
 class ChoiceAnswer(Answer):
