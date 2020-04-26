@@ -179,12 +179,14 @@ class TextAnswerForm(forms.ModelForm):
         model = Answer
         fields = ['answer']
 
-class TextAnswer(admin.ModelAdmin):
+class TextAnswerAdmin(admin.ModelAdmin):
     form = TextAnswerForm
     fields = ('answer',)
     
     def __unicode__(self):
         return self.answer
+
+admin.site.register(TextAnswerForm, TextAnswerAdmin)
 
 #class TextAnswer(Answer):
 #    answer = models.TextField(blank=False,
