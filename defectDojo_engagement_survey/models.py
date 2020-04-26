@@ -172,7 +172,7 @@ class Answer(PolymorphicModel, TimeStampedModel):
                                         blank=False,
                                         on_delete=models.CASCADE)
 
-class TextAnswerForm(forms.ModelForm):
+class TextAnswer(forms.ModelForm):
     answer = forms.CharField( widget=forms.TextInput )
 
     class Meta:
@@ -180,13 +180,13 @@ class TextAnswerForm(forms.ModelForm):
         fields = ['answer']
 
 class TextAnswerAdmin(admin.ModelAdmin):
-    form = TextAnswerForm
+    form = TextAnswer
     fields = ('answer',)
     
     def __unicode__(self):
         return self.answer
 
-admin.site.register(TextAnswerForm, TextAnswerAdmin)
+admin.site.register(TextAnswer, TextAnswerAdmin)
 
 #class TextAnswer(Answer):
 #    answer = models.TextField(blank=False,
