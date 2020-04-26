@@ -596,7 +596,7 @@ def add_empty_survey(request):
         else:
             messages.add_message(request,
                                  messages.ERROR,
-                                 'Survey could not be added.',
+                                 'Questionnaire could not be added.',
                                  extra_tags='alert-danger')
     form.fields["survey"].queryset = surveys
     add_breadcrumb(title="Add new questionnaire", top_level=False, request=request)
