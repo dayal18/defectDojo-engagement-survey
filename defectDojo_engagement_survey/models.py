@@ -170,9 +170,19 @@ class Answer(PolymorphicModel, TimeStampedModel):
                                         blank=False,
                                         on_delete=models.CASCADE)
 
+class TextAnswerForm(forms.ModelForm):
+    answer = forms.TextField(widget=forms.TextInput)
 
-class TextAnswer(Answer):
-    answer = models.TextField(blank=False, default='')
+	class Meta:
+		model = Answer
+		fields = ['answer']
+
+class TextAnswerAdmin(admin.MoedlAdmin):
+	form = TextAnswerForm
+    fields = ('answer',)
+
+#class TextAnswer(Answer):
+#    answer = models.TextField(blank=False, default='')
 
     def __unicode__(self):
         return self.answer
