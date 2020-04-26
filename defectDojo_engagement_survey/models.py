@@ -172,7 +172,7 @@ class Answer(PolymorphicModel, TimeStampedModel):
                                         on_delete=models.CASCADE)
 
 class TextAnswerForm(forms.ModelForm):
-    answer = forms.TextField(widget=forms.TextInput)
+    answer = forms.TextField( widget=forms.TextInput )
 
     class Meta:
         model = Answer
