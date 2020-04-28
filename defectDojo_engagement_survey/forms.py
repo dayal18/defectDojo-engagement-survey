@@ -195,7 +195,7 @@ class Add_Survey_Form(forms.ModelForm):
         queryset=Engagement_Survey.objects.all(),
         required=True,
         widget=forms.widgets.Select(),
-        help_text='Select the questionnaire to add.')
+        help_text='Select the Survey to add.')
 
     class Meta:
         model = Answered_Survey
@@ -211,7 +211,7 @@ class AddGeneralSurveyForm(forms.ModelForm):
         queryset=Engagement_Survey.objects.all(),
         required=True,
         widget=forms.widgets.Select(),
-        help_text='Select the questionnaire to add.')
+        help_text='Select the Survey to add.')
     expiration = forms.DateField(widget=forms.TextInput(
         attrs={'class': 'datepicker', 'autocomplete': 'off'}))
 
@@ -268,7 +268,7 @@ class EditSurveyQuestionsForm(forms.ModelForm):
     questions = forms.ModelMultipleChoiceField(
         Question.objects.all(),
         required=True,
-        help_text="Select questions to include on this questionnaire.  Field can be used to search available questions.",
+        help_text="Select questions to include on this survey.  Field can be used to search available questions.",
         widget=MultipleSelectWithPop(attrs={'size': '11'}))
 
     class Meta:

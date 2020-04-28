@@ -99,8 +99,8 @@ class Engagement_Survey(models.Model):
     active = models.BooleanField(default=True)
 
     class Meta:
-        verbose_name = "Application Questionnaire"
-        verbose_name_plural = "Application Questionnaires"
+        verbose_name = "Engagement Survey"
+        verbose_name_plural = "Engagement Surveys"
         ordering = ('-active', 'name',)
 
     def __unicode__(self):
@@ -130,8 +130,8 @@ class Answered_Survey(models.Model):
     answered_on = models.DateField(null=True)
 
     class Meta:
-        verbose_name = "Filled Questionnaire"
-        verbose_name_plural = "Filled Questionnaires"
+        verbose_name = "Answered Engagement Survey"
+        verbose_name_plural = "Answered Engagement Surveys"
 
     def __unicode__(self):
         return self.survey.name
@@ -147,8 +147,8 @@ class General_Survey(models.Model):
     expiration = models.DateTimeField(null=False, blank=False)
 
     class Meta:
-        verbose_name = "Security Questionnaire"
-        verbose_name_plural = "Security Questionnaires"
+        verbose_name = "General Engagement Survey"
+        verbose_name_plural = "General Engagement Surveys"
 
     def __unicode__(self):
         return self.survey.name
@@ -172,11 +172,13 @@ class Answer(PolymorphicModel, TimeStampedModel):
 
 
 class TextAnswer(Answer):
-   answer = models.TextField(blank=False,
-       help_text='The answer text', default='')
+    answer = models.TextField(
+        blank=False,
+        help_text='The answer text',
+        default='')
 
-   def __unicode__(self):
-       return self.answer
+    def __unicode__(self):
+        return self.answer
 
 
 class ChoiceAnswer(Answer):
