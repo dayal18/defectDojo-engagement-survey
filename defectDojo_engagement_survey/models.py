@@ -5,11 +5,9 @@ Created on Feb 16, 2015
 '''
 from django.contrib.auth import get_user_model
 from django.db import models
-# from django import forms
 from django_extensions.db.models import TimeStampedModel
 from polymorphic.models import PolymorphicModel
 from auditlog.registry import auditlog
-# from django.contrib import admin
 
 from dojo.models import Engagement
 
@@ -172,25 +170,10 @@ class Answer(PolymorphicModel, TimeStampedModel):
                                         blank=False,
                                         on_delete=models.CASCADE)
 
-# class TextAnswer(forms.ModelForm):
-    # answer = forms.CharField( widget=forms.Textarea(attrs={'rows': 2, 'cols': 40}) )
-
-    # class Meta:
-        # model = Answer
-        # fields = ['answer']
-
-# class TextAnswerAdmin(admin.ModelAdmin):
-    # form = TextAnswer
-    # fields = ('answer',)
-    
-    # def __unicode__(self):
-        # return self.answer
-
-# admin.site.register(TextAnswer, TextAnswerAdmin)
 
 class TextAnswer(Answer):
    answer = models.TextField(blank=False,
-       editable=True, default='')
+       help_text='The answer text', default='')
 
    def __unicode__(self):
        return self.answer
