@@ -613,7 +613,7 @@ def view_empty_survey(request, esid):
     engagement = None
 
     questions = get_answered_questions(survey=survey, read_only=True)
-    add_breadcrumb(title=survey.survey.name + " Survey Responses", top_level=False, request=request)
+    add_breadcrumb(title=survey.survey.name + " Responses", top_level=False, request=request)
     return render(request, 'defectDojo-engagement-survey/view_survey.html',
                   {'survey': survey,
                    'user': request.user,
@@ -652,7 +652,7 @@ def delete_empty_survey(request, esid):
                                  messages.ERROR,
                                  'Unable to delete',
                                  extra_tags='alert-danger')
-    add_breadcrumb(title="Delete " + survey.survey.name + " Survey", top_level=False, request=request)
+    add_breadcrumb(title="Delete " + survey.survey.name + " ", top_level=False, request=request)
     return render(request, 'defectDojo-engagement-survey/delete_survey.html',
                   {'survey': survey,
                    'form': form,
@@ -683,7 +683,7 @@ def delete_general_survey(request, esid):
                                  messages.ERROR,
                                  'Unable to delete',
                                  extra_tags='alert-danger')
-    add_breadcrumb(title="Delete " + survey.survey.name + " Survey", top_level=False, request=request)
+    add_breadcrumb(title="Delete " + survey.survey.name + " ", top_level=False, request=request)
     return render(request, 'defectDojo-engagement-survey/delete_survey.html',
                   {'survey': survey,
                    'form': form,
